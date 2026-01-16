@@ -1,0 +1,35 @@
+.test-aoi-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.aoi-dropdown {
+  width: 100%;
+  padding: 0.7rem;
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.aoi-dropdown:hover {
+  border-color: #667eea;
+}
+
+.aoi-dropdown:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.aoi-description {
+  font-size: 0.85rem;
+  color: #666;
+  padding: 0.6rem;
+  background: #e9ecef;
+  border-radius: 4px;
+  border-left: 3px solid #667eea;
+}
