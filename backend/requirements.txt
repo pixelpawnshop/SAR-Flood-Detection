@@ -1,8 +1,10 @@
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-earthengine-api==0.1.380
+earthengine-api==1.6.15
 google-cloud-secret-manager==2.16.4
 pydantic==2.5.0
 python-dotenv==1.0.0
 shapely==2.0.2
 python-multipart==0.0.6
+numpy<2.0.0
+pyproj==3.6.1

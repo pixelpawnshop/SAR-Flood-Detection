@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, FeatureGroup, GeoJSON, LayersControl, useMap } from 'react-leaflet';
+import React, { useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, FeatureGroup, GeoJSON, useMap } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -52,7 +52,6 @@ function BasemapControl({ basemap, setBasemap }) {
 }
 
 function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap }) {
-  const [drawnLayers, setDrawnLayers] = useState([]);
   const featureGroupRef = useRef();
 
   const handleCreated = (e) => {

@@ -187,10 +187,9 @@ def derive_features(image: ee.Image, geometry: Dict[str, Any]) -> ee.Image:
         
         # Compute texture (local standard deviation on VV)
         # Using 3x3 window (~30m at 10m resolution)
-        texture = vv_db.focal_stdDev(
-            radius=30,
-            units='meters',
-            kernelType='square'
+        texture = vv_db.reduceNeighborhood(
+            reducer=ee.Reducer.stdDev(),
+            kernel=ee.Kernel.square(radius=30, units='meters')
         ).rename('texture')
         
         # Get slope from SRTM DEM
