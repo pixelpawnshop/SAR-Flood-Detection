@@ -51,7 +51,7 @@ function BasemapControl({ basemap, setBasemap }) {
   );
 }
 
-function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap }) {
+function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity }) {
   const featureGroupRef = useRef();
 
   const handleCreated = (e) => {
@@ -133,6 +133,15 @@ function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap }) {
               weight: 3,
               fillOpacity: 0.1,
             }}
+          />
+        )}
+
+        {/* Sentinel-1 overlay */}
+        {sentinelOverlay && (
+          <TileLayer
+            url={sentinelOverlay.url}
+            opacity={overlayOpacity}
+            zIndex={500}
           />
         )}
 

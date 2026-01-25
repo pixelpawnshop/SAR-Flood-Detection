@@ -75,15 +75,15 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
             <label>
               <span className="param-label">VV-VH Difference</span>
               <span className="param-value">
-                {params.vv_vh_diff ?? 2}
+                {params.vv_vh_diff ?? 8}
               </span>
             </label>
             <input
               type="range"
               min="0"
-              max="5"
-              step="0.1"
-              value={params.vv_vh_diff ?? 2}
+              max="15"
+              step="0.5"
+              value={params.vv_vh_diff ?? 8}
               onChange={(e) => handleParamChange('vv_vh_diff', e.target.value)}
             />
             <button

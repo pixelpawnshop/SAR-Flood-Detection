@@ -16,6 +16,8 @@ function App() {
   const [error, setError] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [basemap, setBasemap] = useState('osm');
+  const [sentinelOverlay, setSentinelOverlay] = useState(null);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.7);
   const [advancedParams, setAdvancedParams] = useState({
     vv_threshold: null,
     vh_threshold: null,
@@ -81,6 +83,15 @@ function App() {
       );
 
       setResults(data);
+      
+      // Set Sentinel overlay if tile URL is provided
+      if (data.tile_url) {
+        setSentinelOverlay({
+          url: data.tile_url,
+          bounds: data.image_bounds
+        });
+      }
+      
       setProcessingStage(null);
       
     } catch (err) {
@@ -116,7 +127,25 @@ function App() {
             results={results}
             basemap={basemap}
             setBasemap={setBasemap}
+            sentinelOverlay={sentinelOverlay}
+            overlayOpacity={overlayOpacity}
           />
+
+          {sentinelOverlay && (
+            <div className="overlay-control">
+              <label>Sentinel-1 Opacity:</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={overlayOpacity}
+                onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
+              />
+              <span>{Math.round(overlayOpacity * 100)}%</span>
+              <button onClick={() => setSentinelOverlay(null)}>Hide</button>
+            </div>
+          )}
 
           {loading && (
             <ProgressIndicator stage={processingStage} />

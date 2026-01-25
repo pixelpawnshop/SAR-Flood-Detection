@@ -109,9 +109,9 @@ def detect_water(
         
         # Get other thresholds (use defaults if not provided)
         vh_threshold = params.get('vh_threshold', -20)
-        vv_vh_diff_threshold = params.get('vv_vh_diff', 2)
+        vv_vh_diff_threshold = params.get('vv_vh_diff', 8)  # Increased from 2 to 8
         slope_max = params.get('slope_max', 5)
-        texture_max = 3  # Fixed texture threshold
+        texture_max = params.get('texture_max', 2)  # Make it configurable, default 2 dB
         
         logger.info(f"Detection parameters:")
         logger.info(f"  VV threshold: {vv_threshold} dB")
@@ -120,37 +120,83 @@ def detect_water(
         logger.info(f"  Max slope: {slope_max}°")
         logger.info(f"  Max texture: {texture_max}")
         
-        # Create water mask using multiple criteria
+        # Log statistics for each band
+        def log_band_stats(image, band_name):
+            stats = image.select(band_name).reduceRegion(
+                reducer=ee.Reducer.minMax().combine(ee.Reducer.mean(), '', True),
+                geometry=ee_geometry,
+                scale=100,
+                maxPixels=1e8
+            ).getInfo()
+            logger.info(f"  {band_name}: min={stats.get(band_name+'_min', 'N/A'):.2f}, "
+                       f"max={stats.get(band_name+'_max', 'N/A'):.2f}, "
+                       f"mean={stats.get(band_name+'_mean', 'N/A'):.2f}")
+        
+        logger.info("Band statistics:")
+        log_band_stats(features, 'VV_db')
+        log_band_stats(features, 'VH_db')
+        log_band_stats(features, 'VV_VH_diff')
+        log_band_stats(features, 'texture')
+        log_band_stats(features, 'slope')
+        
+        # Create water mask using multiple criteria with step-by-step logging
+        vv_mask = vv_db.lt(vv_threshold)
+        vh_mask = vh_db.lt(vh_threshold)
+        diff_mask = vv_vh_diff.lt(vv_vh_diff_threshold)
+        slope_mask = slope.lt(slope_max)
+        texture_mask = texture.lt(texture_max)
+        
+        # Log pixel counts for each criterion
+        def count_pixels(mask, name):
+            count = mask.reduceRegion(
+                reducer=ee.Reducer.sum(),
+                geometry=ee_geometry,
+                scale=100,
+                maxPixels=1e8
+            ).getInfo()
+            pixels = count.get(list(count.keys())[0], 0)
+            logger.info(f"  {name}: {pixels:.0f} pixels passed")
+            return pixels
+        
+        logger.info("Pixels passing each criterion:")
+        count_pixels(vv_mask, "VV < threshold")
+        count_pixels(vh_mask, "VH < threshold")
+        count_pixels(diff_mask, "VV-VH < threshold")
+        count_pixels(slope_mask, "Slope < max")
+        count_pixels(texture_mask, "Texture < max")
+        
         water_mask = (
-            vv_db.lt(vv_threshold)
-            .And(vh_db.lt(vh_threshold))
-            .And(vv_vh_diff.lt(vv_vh_diff_threshold))
-            .And(slope.lt(slope_max))
-            .And(texture.lt(texture_max))
+            vv_mask
+            .And(vh_mask)
+            .And(diff_mask)
+            .And(slope_mask)
+            .And(texture_mask)
         )
         
-        # Apply morphological operations for cleanup
+        initial_water_pixels = count_pixels(water_mask, "Combined (all criteria)")
+        
+        # Apply morphological operations for cleanup (reduced kernel size to preserve more water)
         # Opening: remove small noise (erosion then dilation)
         # Closing: fill small gaps (dilation then erosion)
         
-        # Opening - remove noise
-        water_cleaned = water_mask.focal_min(
-            radius=30,
+        # Opening - remove noise (reduced from 30m to 10m radius)
+        water_cleaned = water_mask.focalMin(
+            radius=10,
             units='meters',
             kernelType='circle'
-        ).focal_max(
-            radius=30,
+        ).focalMax(
+            radius=10,
             units='meters',
             kernelType='circle'
         )
         
-        # Closing - fill gaps
-        water_final = water_cleaned.focal_max(
-            radius=30,
+        # Closing - fill gaps (reduced from 30m to 10m radius)
+        water_final = water_cleaned.focalMax(
+            radius=10,
             units='meters',
             kernelType='circle'
-        ).focal_min(
-            radius=30,
+        ).focalMin(
+            radius=10,
             units='meters',
             kernelType='circle'
         )

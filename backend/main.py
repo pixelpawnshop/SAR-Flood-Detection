@@ -55,6 +55,10 @@ class WaterDetectionResponse(BaseModel):
     """Response model for water detection"""
     water_polygons: Dict[str, Any] = Field(..., description="GeoJSON FeatureCollection of water polygons")
     metadata: Dict[str, Any] = Field(..., description="Detection metadata")
+    preview_url: Optional[str] = Field(None, description="Sentinel-1 image preview URL")
+    image_bounds: Optional[Dict[str, Any]] = Field(None, description="Sentinel-1 image bounds as GeoJSON")
+    tile_url: Optional[str] = Field(None, description="Tile URL for map overlay")
+    tile_token: Optional[str] = Field(None, description="Token for tile URL")
 
 
 # Startup event
@@ -139,14 +143,21 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
         
         # Detect water
         logger.info("Detecting water...")
-        params = {
-            'vv_threshold': request.vv_threshold,
-            'vh_threshold': request.vh_threshold,
-            'vv_vh_diff': request.vv_vh_diff,
-            'slope_max': request.slope_max,
-            'min_area_pixels': request.min_area_pixels,
-            'texture_window': request.texture_window
-        }
+        # Only include non-None parameters
+        params = {}
+        if request.vv_threshold is not None:
+            params['vv_threshold'] = request.vv_threshold
+        if request.vh_threshold is not None:
+            params['vh_threshold'] = request.vh_threshold
+        if request.vv_vh_diff is not None:
+            params['vv_vh_diff'] = request.vv_vh_diff
+        if request.slope_max is not None:
+            params['slope_max'] = request.slope_max
+        if request.min_area_pixels is not None:
+            params['min_area_pixels'] = request.min_area_pixels
+        if request.texture_window is not None:
+            params['texture_window'] = request.texture_window
+            
         water_mask = detect_water(features, request.geometry, params)
         
         # Vectorize to GeoJSON
@@ -163,12 +174,40 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
         # Calculate water percentage
         water_percentage = round((water_area_km2 / area_km2) * 100, 2) if area_km2 > 0 else 0
         
+        # Generate preview URL and bounds
+        import ee
+        ee_geometry = ee.Geometry(request.geometry)
+        
+        # Create tile URL for map overlay (using VV band in grayscale)
+        tile_url = processed_image.select('VV_db').getMapId({
+            'min': -25,
+            'max': 0,
+            'palette': ['000000', 'ffffff']  # Black to white
+        })
+        
+        # Thumbnail for quick preview
+        preview_url = processed_image.getThumbURL({
+            'dimensions': 512,
+            'region': ee_geometry,
+            'format': 'png',
+            'min': -25,
+            'max': 0,
+            'bands': ['VV_db']
+        })
+        
+        image_bounds = processed_image.geometry().bounds().getInfo()
+        
         logger.info(f"✅ Detection complete: {water_area_km2:.2f} km² water ({water_percentage}%)")
         logger.info(f"   Processing time: {processing_time}s")
+        logger.info(f"   Tile URL: {tile_url['tile_fetcher'].url_format}")
         
         # Return response
         return WaterDetectionResponse(
             water_polygons=water_geojson,
+            preview_url=preview_url,
+            image_bounds=image_bounds,
+            tile_url=tile_url['tile_fetcher'].url_format,
+            tile_token=tile_url['token'],
             metadata={
                 "acquisition_date": acquisition_date,
                 "water_area_km2": round(water_area_km2, 3),

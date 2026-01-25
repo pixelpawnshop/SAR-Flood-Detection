@@ -133,15 +133,32 @@ def preprocess_sar(image: ee.Image, geometry: Dict[str, Any]) -> ee.Image:
         vv = image.select('VV')
         vh = image.select('VH')
         
+        # Log raw values for debugging
+        ee_geometry = ee.Geometry(geometry)
+        raw_stats_vv = vv.reduceRegion(
+            reducer=ee.Reducer.minMax().combine(ee.Reducer.mean(), '', True),
+            geometry=ee_geometry,
+            scale=100,
+            maxPixels=1e8
+        ).getInfo()
+        raw_stats_vh = vh.reduceRegion(
+            reducer=ee.Reducer.minMax().combine(ee.Reducer.mean(), '', True),
+            geometry=ee_geometry,
+            scale=100,
+            maxPixels=1e8
+        ).getInfo()
+        logger.info(f"Raw VV stats: {raw_stats_vv}")
+        logger.info(f"Raw VH stats: {raw_stats_vh}")
+        
         # Apply Lee speckle filter (focal median for noise reduction)
         # Using 7x7 kernel (square with radius ~50m at 10m resolution)
-        vv_filtered = vv.focal_median(radius=50, units='meters', kernelType='square')
-        vh_filtered = vh.focal_median(radius=50, units='meters', kernelType='square')
+        vv_filtered = vv.focalMedian(radius=50, units='meters', kernelType='square')
+        vh_filtered = vh.focalMedian(radius=50, units='meters', kernelType='square')
         
-        # Convert to dB scale
-        # dB = 10 * log10(DN)
-        vv_db = vv_filtered.log10().multiply(10)
-        vh_db = vh_filtered.log10().multiply(10)
+        # Sentinel-1 GRD data is already in dB scale, so no conversion needed
+        # Just rename the bands
+        vv_db = vv_filtered.rename('VV_db')
+        vh_db = vh_filtered.rename('VH_db')
         
         # Combine bands
         processed = ee.Image.cat([
@@ -190,7 +207,7 @@ def derive_features(image: ee.Image, geometry: Dict[str, Any]) -> ee.Image:
         texture = vv_db.reduceNeighborhood(
             reducer=ee.Reducer.stdDev(),
             kernel=ee.Kernel.square(radius=30, units='meters')
-        ).rename('texture')
+        ).select([0], ['texture'])  # Select first band and rename
         
         # Get slope from SRTM DEM
         dem = ee.Image('USGS/SRTMGL1_003')
