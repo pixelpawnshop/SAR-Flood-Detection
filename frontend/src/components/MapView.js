@@ -51,8 +51,13 @@ function BasemapControl({ basemap, setBasemap }) {
   );
 }
 
-function MapView({ selectedAoi, drawnAoi, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showResults }) {
+function MapView({ selectedAoi, drawnAoi, onAoiDrawStart, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showResults }) {
   const featureGroupRef = useRef();
+
+  const handleDrawStart = (e) => {
+    // Clear previous state when starting a new draw
+    onAoiDrawStart();
+  };
 
   const handleCreated = (e) => {
     const { layer } = e;
@@ -113,6 +118,7 @@ function MapView({ selectedAoi, drawnAoi, onAoiDraw, results, basemap, setBasema
         <FeatureGroup ref={featureGroupRef}>
           <EditControl
             position="topright"
+            onDrawStart={handleDrawStart}
             onCreated={handleCreated}
             onDeleted={handleDeleted}
             draw={{

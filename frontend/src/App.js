@@ -35,11 +35,17 @@ function App() {
     setError(null);
   };
 
+  const handleAoiDrawStart = () => {
+    // Clear previous AOI and results when starting a new draw
+    setDrawnAoi(null);
+    setResults(null);
+    setSentinelOverlay(null);
+    setError(null);
+  };
+
   const handleAoiDraw = (geometry) => {
     setDrawnAoi(geometry);
     setSelectedAoi(null);
-    setResults(null);
-    setError(null);
   };
 
   const handleDetectWater = async () => {
@@ -125,6 +131,7 @@ function App() {
           <MapView
             selectedAoi={selectedAoi}
             drawnAoi={drawnAoi}
+            onAoiDrawStart={handleAoiDrawStart}
             onAoiDraw={handleAoiDraw}
             results={results}
             basemap={basemap}
