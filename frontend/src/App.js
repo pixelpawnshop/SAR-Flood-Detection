@@ -124,6 +124,7 @@ function App() {
         <div className="map-container">
           <MapView
             selectedAoi={selectedAoi}
+            drawnAoi={drawnAoi}
             onAoiDraw={handleAoiDraw}
             results={results}
             basemap={basemap}

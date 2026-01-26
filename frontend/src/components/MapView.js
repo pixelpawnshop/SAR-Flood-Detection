@@ -51,7 +51,7 @@ function BasemapControl({ basemap, setBasemap }) {
   );
 }
 
-function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showResults }) {
+function MapView({ selectedAoi, drawnAoi, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showResults }) {
   const featureGroupRef = useRef();
 
   const handleCreated = (e) => {
@@ -70,6 +70,12 @@ function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentine
   const handleDeleted = (e) => {
     onAoiDraw(null);
   };
+
+  // Render drawn AOI polygon
+  const drawnAoiPolygon = drawnAoi ? {
+    type: 'Feature',
+    geometry: drawnAoi
+  } : null;
 
   // Render selected AOI polygon
   const selectedAoiPolygon = selectedAoi ? {
@@ -123,6 +129,18 @@ function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentine
             }}
           />
         </FeatureGroup>
+
+        {/* Drawn AOI */}
+        {drawnAoiPolygon && (
+          <GeoJSON
+            data={drawnAoiPolygon}
+            style={{
+              color: '#8b5cf6',
+              weight: 3,
+              fillOpacity: 0.1,
+            }}
+          />
+        )}
 
         {/* Selected test AOI */}
         {selectedAoiPolygon && (
