@@ -90,32 +90,51 @@ body {
   background-color: white;
 }
 
-/* Overlay control */
-.overlay-control {
+/* Overlay controls container */
+.map-controls {
   position: absolute;
-  top: 80px;
-  right: 20px;
-  z-index: 1000;
-  background: white;
-  padding: 12px 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  top: 130px;
+  right: 10px;
+  z-index: 999;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  max-width: 300px;
 }
 
-.overlay-control label {
+/* Individual control panels */
+.overlay-control,
+.results-toggle-control {
+  background: white;
+  padding: 10px 14px;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.overlay-control label,
+.results-toggle-control label {
   font-weight: 600;
   color: #333;
+  white-space: nowrap;
 }
 
 .overlay-control input[type="range"] {
-  width: 120px;
+  width: 100px;
 }
 
-.overlay-control button {
+.overlay-control span {
+  font-size: 12px;
+  color: #666;
+  min-width: 35px;
+}
+
+.overlay-control button,
+.results-toggle-control button {
   padding: 4px 12px;
   background: #667eea;
   color: white;
@@ -123,10 +142,20 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
+  white-space: nowrap;
 }
 
-.overlay-control button:hover {
+.overlay-control button:hover,
+.results-toggle-control button:hover {
   background: #5568d3;
+}
+
+.results-toggle-control button.active {
+  background: #48bb78;
+}
+
+.results-toggle-control button.active:hover {
+  background: #38a169;
 }
 
 /* Responsive */

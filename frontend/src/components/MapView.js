@@ -51,7 +51,7 @@ function BasemapControl({ basemap, setBasemap }) {
   );
 }
 
-function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity }) {
+function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showResults }) {
   const featureGroupRef = useRef();
 
   const handleCreated = (e) => {
@@ -146,7 +146,7 @@ function MapView({ selectedAoi, onAoiDraw, results, basemap, setBasemap, sentine
         )}
 
         {/* Water detection results */}
-        {results && results.water_polygons && results.water_polygons.features.length > 0 && (
+        {showResults && results && results.water_polygons && results.water_polygons.features.length > 0 && (
           <GeoJSON
             data={results.water_polygons}
             style={{

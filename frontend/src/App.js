@@ -18,6 +18,7 @@ function App() {
   const [basemap, setBasemap] = useState('osm');
   const [sentinelOverlay, setSentinelOverlay] = useState(null);
   const [overlayOpacity, setOverlayOpacity] = useState(0.7);
+  const [showResults, setShowResults] = useState(true);
   const [advancedParams, setAdvancedParams] = useState({
     vv_threshold: null,
     vh_threshold: null,
@@ -129,23 +130,38 @@ function App() {
             setBasemap={setBasemap}
             sentinelOverlay={sentinelOverlay}
             overlayOpacity={overlayOpacity}
+            showResults={showResults}
           />
 
-          {sentinelOverlay && (
-            <div className="overlay-control">
-              <label>Sentinel-1 Opacity:</label>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={overlayOpacity}
-                onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
-              />
-              <span>{Math.round(overlayOpacity * 100)}%</span>
-              <button onClick={() => setSentinelOverlay(null)}>Hide</button>
-            </div>
-          )}
+          <div className="map-controls">
+            {sentinelOverlay && (
+              <div className="overlay-control">
+                <label>Sentinel-1:</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={overlayOpacity}
+                  onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
+                />
+                <span>{Math.round(overlayOpacity * 100)}%</span>
+                <button onClick={() => setSentinelOverlay(null)}>Hide</button>
+              </div>
+            )}
+
+            {results && (
+              <div className="results-toggle-control">
+                <label>Water Polygons:</label>
+                <button 
+                  className={showResults ? 'active' : ''}
+                  onClick={() => setShowResults(!showResults)}
+                >
+                  {showResults ? 'Visible' : 'Hidden'}
+                </button>
+              </div>
+            )}
+          </div>
 
           {loading && (
             <ProgressIndicator stage={processingStage} />
