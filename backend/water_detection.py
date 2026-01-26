@@ -10,67 +10,74 @@ from typing import Dict, Any, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 
-def compute_otsu_threshold(image: ee.Image, band: str, geometry: Dict[str, Any]) -> float:
+def compute_otsu_threshold(image: ee.Image, band: str, geometry: Dict[str, Any], params: Dict[str, Any] = {}) -> float:
     """
-    Compute Otsu threshold for a given band
-    Uses percentile-based approach as approximation
+    Compute adaptive Otsu threshold using distribution analysis
+    Automatically selects threshold based on scene characteristics
     
     Args:
-        image: ee.Image with the band to threshold
+        image: ee.Image with the band to threshold (should be RAW, unfiltered)
         geometry: GeoJSON geometry for analysis
+        params: Dictionary with optional raw_image parameter
         
     Returns:
         Threshold value in dB
     """
     try:
         ee_geometry = ee.Geometry(geometry)
-        band_image = image.select(band)
         
-        # Compute histogram
-        histogram = band_image.reduceRegion(
-            reducer=ee.Reducer.histogram(255, 0.1),
-            geometry=ee_geometry,
-            scale=100,  # Use coarser scale for speed
-            maxPixels=1e9,
-            bestEffort=True
-        )
+        # Use raw image if provided for better distribution analysis
+        if 'raw_image' in params and params['raw_image'] is not None:
+            raw_image = params['raw_image']
+            band_image = raw_image.select('VV')  # Use raw VV
+            logger.info("Using raw (unfiltered) VV for threshold calculation")
+        else:
+            band_image = image.select(band)
         
-        # Get histogram data
-        hist_dict = histogram.getInfo()
-        
-        if band not in hist_dict or hist_dict[band] is None:
-            # Fallback to percentile-based threshold
-            logger.warning(f"Histogram computation failed for {band}, using percentile fallback")
-            percentile = band_image.reduceRegion(
-                reducer=ee.Reducer.percentile([15]),
-                geometry=ee_geometry,
-                scale=100,
-                maxPixels=1e9,
-                bestEffort=True
-            ).getInfo()
-            
-            threshold = percentile.get(band, -15)
-            logger.info(f"Otsu threshold (percentile fallback): {threshold:.2f} dB")
-            return threshold
-        
-        # Use percentile-based threshold (15th percentile for conservative water detection)
-        percentile = band_image.reduceRegion(
-            reducer=ee.Reducer.percentile([15]),
+        # Get percentiles to analyze distribution
+        percentiles = band_image.reduceRegion(
+            reducer=ee.Reducer.percentile([5, 15, 25, 35, 50, 85]),
             geometry=ee_geometry,
             scale=100,
             maxPixels=1e9,
             bestEffort=True
         ).getInfo()
         
-        threshold = percentile.get(band, -15)
-        logger.info(f"Otsu threshold (15th percentile): {threshold:.2f} dB")
+        p5 = percentiles.get(f'{band}_p5', -25)
+        p15 = percentiles.get(f'{band}_p15', -20)
+        p25 = percentiles.get(f'{band}_p25', -18)
+        p35 = percentiles.get(f'{band}_p35', -15)
+        p50 = percentiles.get(f'{band}_p50', -12)
+        p85 = percentiles.get(f'{band}_p85', -8)
         
+        logger.info(f"Distribution: p5={p5:.2f}, p15={p15:.2f}, p25={p25:.2f}, p50={p50:.2f}, p85={p85:.2f}")
+        
+        # Adaptive selection based on distribution shape
+        water_land_gap = p50 - p25
+        lower_range = p25 - p5  # Spread in dark pixels
+        
+        if water_land_gap > 8:
+            # Clear bimodal: significant water body present (like Venice lagoon)
+            # Use 40% into the gap to capture the entire water mode
+            threshold = p25 + (water_land_gap * 0.4)
+            logger.info(f"Bimodal scene (gap={water_land_gap:.2f}dB), aggressive threshold")
+        elif water_land_gap > 5:
+            # Moderate: some water present
+            # Use p35 to be more inclusive
+            threshold = p35
+            logger.info(f"Moderate scene (gap={water_land_gap:.2f}dB), p35")
+        else:
+            # Dry/unimodal or flood scenario
+            # Use p25 instead of p15 to catch more subtle water
+            threshold = p25
+            logger.info(f"Unimodal scene (gap={water_land_gap:.2f}dB), p25")
+        
+        logger.info(f"Adaptive Otsu threshold: {threshold:.2f} dB")
         return threshold
         
     except Exception as e:
-        logger.error(f"Error computing Otsu threshold: {e}")
-        # Return conservative default
-        return -15
+        logger.error(f"Error computing threshold: {e}")
+        return -18
 
 
 def detect_water(
@@ -104,21 +111,21 @@ def detect_water(
             vv_threshold = params['vv_threshold']
             logger.info(f"Using manual VV threshold: {vv_threshold} dB")
         else:
-            vv_threshold = compute_otsu_threshold(features, 'VV_db', geometry)
+            vv_threshold = compute_otsu_threshold(features, 'VV_db', geometry, params)
             logger.info(f"Using auto VV threshold (Otsu): {vv_threshold} dB")
         
         # Get other thresholds (use defaults if not provided)
         vh_threshold = params.get('vh_threshold', -20)
-        vv_vh_diff_threshold = params.get('vv_vh_diff', 8)  # Increased from 2 to 8
+        vv_vh_diff_threshold = params.get('vv_vh_diff', None)  # Make optional, not used by default
         slope_max = params.get('slope_max', 5)
-        texture_max = params.get('texture_max', 2)  # Make it configurable, default 2 dB
+        texture_max = params.get('texture_max', None)  # Make optional, not used by default
         
         logger.info(f"Detection parameters:")
         logger.info(f"  VV threshold: {vv_threshold} dB")
         logger.info(f"  VH threshold: {vh_threshold} dB")
-        logger.info(f"  VV-VH diff: < {vv_vh_diff_threshold}")
+        logger.info(f"  VV-VH diff: < {vv_vh_diff_threshold if vv_vh_diff_threshold else 'disabled'}")
         logger.info(f"  Max slope: {slope_max}°")
-        logger.info(f"  Max texture: {texture_max}")
+        logger.info(f"  Max texture: {texture_max if texture_max else 'disabled'}")
         
         # Log statistics for each band
         def log_band_stats(image, band_name):
@@ -139,12 +146,15 @@ def detect_water(
         log_band_stats(features, 'texture')
         log_band_stats(features, 'slope')
         
-        # Create water mask using multiple criteria with step-by-step logging
+        # Create water mask - SIMPLIFIED for robustness
+        # Primary criterion: low VV backscatter (dark in SAR)
         vv_mask = vv_db.lt(vv_threshold)
+        
+        # Secondary criterion: low VH backscatter (optional validation)
         vh_mask = vh_db.lt(vh_threshold)
-        diff_mask = vv_vh_diff.lt(vv_vh_diff_threshold)
+        
+        # Slope mask (flat areas)
         slope_mask = slope.lt(slope_max)
-        texture_mask = texture.lt(texture_max)
         
         # Log pixel counts for each criterion
         def count_pixels(mask, name):
@@ -161,17 +171,22 @@ def detect_water(
         logger.info("Pixels passing each criterion:")
         count_pixels(vv_mask, "VV < threshold")
         count_pixels(vh_mask, "VH < threshold")
-        count_pixels(diff_mask, "VV-VH < threshold")
         count_pixels(slope_mask, "Slope < max")
-        count_pixels(texture_mask, "Texture < max")
         
-        water_mask = (
-            vv_mask
-            .And(vh_mask)
-            .And(diff_mask)
-            .And(slope_mask)
-            .And(texture_mask)
-        )
+        # Combine criteria - ROBUST approach
+        # Use VV AND slope as core (most reliable)
+        water_mask = vv_mask.And(slope_mask)
+        
+        # Only add optional criteria if specified by user
+        if vv_vh_diff_threshold is not None:
+            diff_mask = vv_vh_diff.lt(vv_vh_diff_threshold)
+            count_pixels(diff_mask, "VV-VH < threshold")
+            water_mask = water_mask.And(diff_mask)
+            
+        if texture_max is not None:
+            texture_mask = texture.lt(texture_max)
+            count_pixels(texture_mask, "Texture < max")
+            water_mask = water_mask.And(texture_mask)
         
         initial_water_pixels = count_pixels(water_mask, "Combined (all criteria)")
         

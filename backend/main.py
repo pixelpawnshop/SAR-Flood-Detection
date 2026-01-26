@@ -157,6 +157,9 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
             params['min_area_pixels'] = request.min_area_pixels
         if request.texture_window is not None:
             params['texture_window'] = request.texture_window
+        
+        # Pass raw image for better threshold calculation
+        params['raw_image'] = s1_image
             
         water_mask = detect_water(features, request.geometry, params)
         
