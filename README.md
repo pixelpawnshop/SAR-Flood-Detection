@@ -41,13 +41,10 @@ This application enables users to:
 
 ## 🚀 Features
 
-- **Adaptive Water Detection**: Otsu thresholding automatically adjusts to local conditions
-- **Manual Overrides**: Advanced users can fine-tune detection parameters
-- **Dual Basemaps**: Toggle between OpenStreetMap and Esri World Imagery
-- **Test AOIs**: Pre-loaded test locations including historical flood events
-- **Real-time Processing**: Results typically return in 30-60 seconds
-- **No Caching**: Stateless design - download results as needed
-- **Free Data**: Uses Copernicus Sentinel-1 SAR imagery via Google Earth Engine
+- **Adaptive Water Detection**: Otsu thresholding automatically adjusts to scene characteristics
+- **Location Search**: Search and navigate to any location worldwide
+- **GeoJSON Export**: Download detected water polygons for further analysis
+- **Free Data**: Uses Copernicus Sentinel-1 SAR via Google Earth Engine
 
 ## 🛠️ Technology Stack
 
@@ -129,12 +126,10 @@ Frontend will be available at http://localhost:3000
 
 ## 🧪 Testing with Sample AOIs
 
-The application includes 4 pre-loaded test AOIs:
+The application includes 2 pre-loaded test locations:
 
-1. **Ahrweiler, Germany (2021 Floods)** - European flash flooding event
-2. **Sindh, Pakistan (2022 Floods)** - Massive monsoon flooding
-3. **Venice Lagoon, Italy** - Permanent water baseline
-4. **Sahara Desert, Algeria** - Dry control area (minimal water)
+1. **Venice Lagoon, Italy** - Permanent water baseline for algorithm validation
+2. **Lake Mead, Nevada/Arizona** - Large reservoir for drought monitoring
 
 Select these from the sidebar to quickly test the application.
 
@@ -200,21 +195,28 @@ Or use the GitHub Actions workflow (see `.github/workflows/deploy-frontend.yml`)
 
 For fine-tuning detection (accessible via collapsible panel):
 
-- **VV Threshold (dB)**: Primary water backscatter threshold
-- **VH Threshold (dB)**: Secondary polarization threshold
-- **VV-VH Difference**: Polarization ratio limit
-- **Max Slope (degrees)**: Exclude steep terrain
-- **Min Area (pixels)**: Remove small noise objects
-- **Texture Window**: Spatial texture analysis window size
+- **End Date**: Select a specific date to search for imagery on or before that date (default: latest available)
+- **Max Slope (degrees)**: Exclude steep terrain unlikely to retain water (default: 5°)
+- **Min Area (pixels)**: Filter out small noise artifacts (default: 100 pixels)
+
+The algorithm uses adaptive Otsu thresholding which automatically determines the optimal VV backscatter threshold based on the image histogram.
 
 ## ⚠️ Limitations
 
+### Technical Constraints
 - **AOI Size**: Maximum 50×50 km (2500 km²) for real-time processing
-- **Temporal**: Uses most recent acquisition (last 30 days)
+- **Temporal**: Uses most recent acquisition within specified date range
 - **Orbit**: ASCENDING pass only for consistency
 - **Resolution**: 10m Sentinel-1 ground resolution
-- **False Positives**: May occur in urban areas, wet soil, low-wind conditions
-- **Processing Time**: 30-120 seconds depending on AOI size
+- **Processing Time**: 15-30 seconds depending on AOI size
+
+### Algorithm Limitations
+- **No-Water Scenes**: Otsu thresholding may incorrectly identify "water" pixels in completely dry areas (unimodal histograms with no actual water present)
+- **Frozen Water Bodies**: Ice and snow on rivers/lakes appear similar to land in SAR imagery, causing frozen water to be missed or misclassified
+
+### Environmental Conditions
+- **High Winds**: Wind-roughened water surfaces increase backscatter, reducing detection accuracy or causing water to appear as land
+- **Vegetation**: Dense floating vegetation may mask water presence
 
 ## 🔮 Future Enhancements
 
@@ -222,10 +224,7 @@ For fine-tuning detection (accessible via collapsible panel):
 - [ ] Multi-temporal stacking for stability
 - [ ] Sentinel-2 optical cross-validation
 - [ ] Permanent water vs flood water classification
-- [ ] Export to Shapefile/KML formats
 - [ ] Time-series animation
-- [ ] Email alerts for new detections
-- [ ] Mobile-responsive design improvements
 
 ## 📄 License
 
@@ -243,4 +242,4 @@ For questions, issues, or collaborations, please open an issue on GitHub.
 
 ---
 
-**Note**: This is a portfolio/demonstration project. For operational flood monitoring, consider additional validation and temporal analysis.
+**Note**: This is a demonstration project. For operational flood monitoring, consider additional validation and temporal analysis.
