@@ -18,6 +18,7 @@ function App() {
   const [basemap, setBasemap] = useState('osm');
   const [sentinelOverlay, setSentinelOverlay] = useState(null);
   const [overlayOpacity, setOverlayOpacity] = useState(0.7);
+  const [showSentinel, setShowSentinel] = useState(true);
   const [showResults, setShowResults] = useState(true);
   const [advancedParams, setAdvancedParams] = useState({
     vv_threshold: null,
@@ -40,6 +41,7 @@ function App() {
     setDrawnAoi(null);
     setResults(null);
     setSentinelOverlay(null);
+    setShowSentinel(true);
     setError(null);
   };
 
@@ -138,6 +140,7 @@ function App() {
             setBasemap={setBasemap}
             sentinelOverlay={sentinelOverlay}
             overlayOpacity={overlayOpacity}
+            showSentinel={showSentinel}
             showResults={showResults}
           />
 
@@ -152,9 +155,15 @@ function App() {
                   step="0.1"
                   value={overlayOpacity}
                   onChange={(e) => setOverlayOpacity(parseFloat(e.target.value))}
+                  disabled={!showSentinel}
                 />
                 <span>{Math.round(overlayOpacity * 100)}%</span>
-                <button onClick={() => setSentinelOverlay(null)}>Hide</button>
+                <button 
+                  className={showSentinel ? 'active' : ''}
+                  onClick={() => setShowSentinel(!showSentinel)}
+                >
+                  {showSentinel ? 'Visible' : 'Hidden'}
+                </button>
               </div>
             )}
 

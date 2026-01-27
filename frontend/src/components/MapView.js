@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, FeatureGroup, GeoJSON, useMap } from 'react-leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, FeatureGroup, GeoJSON, useMap, ScaleControl } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -51,7 +51,83 @@ function BasemapControl({ basemap, setBasemap }) {
   );
 }
 
-function MapView({ selectedAoi, drawnAoi, onAoiDrawStart, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showResults }) {
+// Component for location search
+function SearchBar() {
+  const map = useMap();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
+  const handleSearch = async () => {
+    if (!query.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+      );
+      const data = await response.json();
+      setResults(data);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleResultClick = (result) => {
+    const lat = parseFloat(result.lat);
+    const lon = parseFloat(result.lon);
+    map.flyTo([lat, lon], 13, { duration: 1.5 });
+    setShowResults(false);
+    setQuery('');
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  return (
+    <div className="search-bar">
+      <div className="search-input-group">
+        <input
+          type="text"
+          placeholder="Search location..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="search-input"
+        />
+        <button 
+          onClick={handleSearch} 
+          disabled={isSearching}
+          className="search-button"
+        >
+          {isSearching ? '...' : '🔍'}
+        </button>
+      </div>
+      {showResults && results.length > 0 && (
+        <div className="search-results">
+          {results.map((result, idx) => (
+            <div
+              key={idx}
+              className="search-result-item"
+              onClick={() => handleResultClick(result)}
+            >
+              {result.display_name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MapView({ selectedAoi, drawnAoi, onAoiDrawStart, onAoiDraw, results, basemap, setBasemap, sentinelOverlay, overlayOpacity, showSentinel, showResults }) {
   const featureGroupRef = useRef();
 
   const handleDrawStart = (e) => {
@@ -99,6 +175,12 @@ function MapView({ selectedAoi, drawnAoi, onAoiDrawStart, onAoiDraw, results, ba
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
       >
+        {/* Scale control */}
+        <ScaleControl position="bottomleft" imperial={false} />
+        
+        {/* Search bar */}
+        <SearchBar />
+        
         {/* Basemap layers */}
         {basemap === 'osm' ? (
           <TileLayer
@@ -161,7 +243,7 @@ function MapView({ selectedAoi, drawnAoi, onAoiDrawStart, onAoiDraw, results, ba
         )}
 
         {/* Sentinel-1 overlay */}
-        {sentinelOverlay && (
+        {sentinelOverlay && showSentinel && (
           <TileLayer
             url={sentinelOverlay.url}
             opacity={overlayOpacity}
