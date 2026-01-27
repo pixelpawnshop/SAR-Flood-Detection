@@ -43,9 +43,7 @@ app.add_middleware(
 class WaterDetectionRequest(BaseModel):
     """Request model for water detection"""
     geometry: Dict[str, Any] = Field(..., description="GeoJSON geometry (Polygon or MultiPolygon)")
-    vv_threshold: Optional[float] = Field(None, ge=-30, le=0, description="VV polarization threshold in dB")
-    vh_threshold: Optional[float] = Field(None, ge=-35, le=0, description="VH polarization threshold in dB")
-    vv_vh_diff: Optional[float] = Field(None, ge=0, le=10, description="VV-VH difference threshold")
+    start_date: Optional[str] = Field(None, description="Start date for imagery search (YYYY-MM-DD). Searches from this date to present.")
     slope_max: Optional[float] = Field(None, ge=0, le=30, description="Maximum slope in degrees")
     min_area_pixels: Optional[int] = Field(None, ge=1, le=1000, description="Minimum area in pixels")
     texture_window: Optional[int] = Field(None, ge=1, le=9, description="Texture analysis window size")
@@ -112,7 +110,7 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
         
         # Get Sentinel-1 imagery
         logger.info("Fetching Sentinel-1 imagery...")
-        s1_image, acquisition_date = get_sentinel1_image(request.geometry)
+        s1_image, acquisition_date = get_sentinel1_image(request.geometry, start_date=request.start_date)
         
         if s1_image is None:
             # No imagery found - return empty result with warning
@@ -145,18 +143,10 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
         logger.info("Detecting water...")
         # Only include non-None parameters
         params = {}
-        if request.vv_threshold is not None:
-            params['vv_threshold'] = request.vv_threshold
-        if request.vh_threshold is not None:
-            params['vh_threshold'] = request.vh_threshold
-        if request.vv_vh_diff is not None:
-            params['vv_vh_diff'] = request.vv_vh_diff
         if request.slope_max is not None:
             params['slope_max'] = request.slope_max
         if request.min_area_pixels is not None:
             params['min_area_pixels'] = request.min_area_pixels
-        if request.texture_window is not None:
-            params['texture_window'] = request.texture_window
         
         # Pass raw image for better threshold calculation
         params['raw_image'] = s1_image
@@ -218,9 +208,7 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
                 "processing_time_seconds": processing_time,
                 "aoi_area_km2": round(area_km2, 2),
                 "parameters_used": {
-                    "vv_threshold": request.vv_threshold or "auto (Otsu)",
-                    "vh_threshold": request.vh_threshold or -20,
-                    "vv_vh_diff": request.vv_vh_diff or 2,
+                    "start_date": request.start_date or "latest available",
                     "slope_max": request.slope_max or 5,
                     "min_area_pixels": request.min_area_pixels or 100
                 }

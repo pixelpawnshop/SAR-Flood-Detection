@@ -5,6 +5,13 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
   const handleParamChange = (key, value) => {
     setParams({
       ...params,
+      [key]: value === '' ? null : value,
+    });
+  };
+
+  const handleNumericChange = (key, value) => {
+    setParams({
+      ...params,
       [key]: value === '' ? null : parseFloat(value),
     });
   };
@@ -21,77 +28,32 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
       {showAdvanced && (
         <div className="advanced-content">
           <p className="advanced-help">
-            Leave blank to use automatic (Otsu) thresholding. 
-            Adjust these values to fine-tune water detection.
+            Fine-tune detection settings for specific scenarios.
           </p>
 
           <div className="param-group">
             <label>
-              <span className="param-label">VV Threshold (dB)</span>
+              <span className="param-label">End Date (optional)</span>
               <span className="param-value">
-                {params.vv_threshold ?? 'Auto'}
+                {params.start_date || 'Latest available'}
               </span>
             </label>
             <input
-              type="range"
-              min="-25"
-              max="-5"
-              step="0.5"
-              value={params.vv_threshold ?? -15}
-              onChange={(e) => handleParamChange('vv_threshold', e.target.value)}
+              type="date"
+              value={params.start_date || ''}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => handleParamChange('start_date', e.target.value)}
+              style={{ width: '100%', padding: '8px', fontSize: '14px' }}
             />
             <button
               className="reset-btn"
-              onClick={() => handleParamChange('vv_threshold', '')}
+              onClick={() => handleParamChange('start_date', '')}
             >
               Reset
             </button>
-          </div>
-
-          <div className="param-group">
-            <label>
-              <span className="param-label">VH Threshold (dB)</span>
-              <span className="param-value">
-                {params.vh_threshold ?? -20}
-              </span>
-            </label>
-            <input
-              type="range"
-              min="-30"
-              max="-10"
-              step="0.5"
-              value={params.vh_threshold ?? -20}
-              onChange={(e) => handleParamChange('vh_threshold', e.target.value)}
-            />
-            <button
-              className="reset-btn"
-              onClick={() => handleParamChange('vh_threshold', '')}
-            >
-              Reset
-            </button>
-          </div>
-
-          <div className="param-group">
-            <label>
-              <span className="param-label">VV-VH Difference</span>
-              <span className="param-value">
-                {params.vv_vh_diff ?? 8}
-              </span>
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="15"
-              step="0.5"
-              value={params.vv_vh_diff ?? 8}
-              onChange={(e) => handleParamChange('vv_vh_diff', e.target.value)}
-            />
-            <button
-              className="reset-btn"
-              onClick={() => handleParamChange('vv_vh_diff', '')}
-            >
-              Reset
-            </button>
+            <p style={{ fontSize: '12px', color: '#666', margin: '4px 0 0 0' }}>
+              Searches for latest image on or before this date
+            </p>
           </div>
 
           <div className="param-group">
@@ -107,7 +69,7 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
               max="15"
               step="1"
               value={params.slope_max ?? 5}
-              onChange={(e) => handleParamChange('slope_max', e.target.value)}
+              onChange={(e) => handleNumericChange('slope_max', e.target.value)}
             />
             <button
               className="reset-btn"
@@ -130,7 +92,7 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
               max="500"
               step="10"
               value={params.min_area_pixels ?? 100}
-              onChange={(e) => handleParamChange('min_area_pixels', e.target.value)}
+              onChange={(e) => handleNumericChange('min_area_pixels', e.target.value)}
             />
             <button
               className="reset-btn"
@@ -143,15 +105,12 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
           <button
             className="reset-all-btn"
             onClick={() => setParams({
-              vv_threshold: null,
-              vh_threshold: null,
-              vv_vh_diff: null,
+              start_date: null,
               slope_max: null,
               min_area_pixels: null,
-              texture_window: null,
             })}
           >
-            Reset All to Auto
+            Reset All to Defaults
           </button>
         </div>
       )}

@@ -58,12 +58,14 @@ def initialize_gee():
         raise
 
 
-def get_sentinel1_image(geometry: Dict[str, Any]) -> Tuple[Optional[ee.Image], Optional[str]]:
+def get_sentinel1_image(geometry: Dict[str, Any], start_date: Optional[str] = None) -> Tuple[Optional[ee.Image], Optional[str]]:
     """
     Get the most recent Sentinel-1 image for the AOI
     
     Args:
         geometry: GeoJSON geometry dict
+        start_date: Optional end date (YYYY-MM-DD). If provided, searches for latest image on or before this date.
+                   If None, searches last 30 days.
         
     Returns:
         Tuple of (ee.Image, acquisition_date_string) or (None, None) if no imagery found
@@ -72,14 +74,23 @@ def get_sentinel1_image(geometry: Dict[str, Any]) -> Tuple[Optional[ee.Image], O
         # Convert GeoJSON to ee.Geometry
         ee_geometry = ee.Geometry(geometry)
         
-        # Define date range (last 30 days)
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=30)
+        # Define date range
+        if start_date:
+            # Parse user-provided date and search backwards from it
+            end = datetime.strptime(start_date, '%Y-%m-%d')
+            # Search up to 90 days before the selected date
+            start = end - timedelta(days=90)
+            logger.info(f"Searching for latest imagery on or before {start_date}")
+        else:
+            # Default: search last 30 days to present
+            end = datetime.now()
+            start = end - timedelta(days=30)
+            logger.info("Searching for imagery from last 30 days")
         
         # Filter Sentinel-1 collection
         collection = (ee.ImageCollection('COPERNICUS/S1_GRD')
             .filterBounds(ee_geometry)
-            .filterDate(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'))
+            .filterDate(start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d'))
             .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
             .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH'))
             .filter(ee.Filter.eq('instrumentMode', 'IW'))
@@ -93,7 +104,8 @@ def get_sentinel1_image(geometry: Dict[str, Any]) -> Tuple[Optional[ee.Image], O
         size = image_list.size().getInfo()
         
         if size == 0:
-            logger.warning("No Sentinel-1 imagery found in the last 30 days")
+            date_range = f"from {start_date}" if start_date else "in the last 30 days"
+            logger.warning(f"No Sentinel-1 imagery found {date_range}")
             return None, None
         
         # Get the image
