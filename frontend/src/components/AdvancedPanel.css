@@ -68,7 +68,7 @@
   height: 18px;
   margin-left: 6px;
   padding: 0;
-  background: #667eea;
+  background: #2563eb;
   color: white;
   border: none;
   border-radius: 50%;
@@ -80,7 +80,7 @@
 }
 
 .info-btn:hover {
-  background: #5568d3;
+  background: #1d4ed8;
   transform: scale(1.1);
 }
 

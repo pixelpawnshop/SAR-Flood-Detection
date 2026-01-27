@@ -22,14 +22,14 @@ function ResultsPanel({ results }) {
   return (
     <div className="results-panel">
       <div className="results-header">
-        <h3>📊 Detection Results</h3>
+        <h3>Detection Results</h3>
         <button className="close-btn" onClick={() => {}}>×</button>
       </div>
 
       <div className="results-content">
         {metadata.warning && (
           <div className="warning-box">
-            <strong>⚠️ Warning:</strong> {metadata.warning}
+            <strong>Warning:</strong> {metadata.warning}
           </div>
         )}
 

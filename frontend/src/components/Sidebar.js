@@ -16,12 +16,12 @@ function Sidebar({
     <div className="sidebar">
       <div className="sidebar-content">
         <section className="sidebar-section">
-          <h2>📍 Select Test Location</h2>
+          <h2>Select Test Location</h2>
           <TestAoiSelector onSelect={onAoiSelect} />
         </section>
 
         <section className="sidebar-section">
-          <h2>✏️ Or Draw AOI</h2>
+          <h2>Draw Custom AOI</h2>
           <p className="help-text">
             Use the drawing tools on the map to create a custom Area of Interest.
             Maximum size: 50×50 km (2500 km²)
@@ -43,7 +43,7 @@ function Sidebar({
             onClick={onDetectWater}
             disabled={loading}
           >
-            {loading ? '🔄 Processing...' : '🛰️ Detect Water'}
+            {loading ? 'Processing...' : 'Analyze Water'}
           </button>
         </section>
 

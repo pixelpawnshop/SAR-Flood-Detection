@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 import time
 import logging
+import math
 
 from gee_processing import initialize_gee, get_sentinel1_image, preprocess_sar, derive_features
 from water_detection import detect_water, vectorize_to_geojson
@@ -17,6 +18,22 @@ from utils import calculate_aoi_area, validate_geometry
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def sanitize_floats(obj):
+    """
+    Replace NaN and Infinity with None for JSON serialization.
+    Recursively processes dicts, lists, and float values.
+    """
+    if isinstance(obj, dict):
+        return {k: sanitize_floats(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_floats(item) for item in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    return obj
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -194,6 +211,20 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
         logger.info(f"   Processing time: {processing_time}s")
         logger.info(f"   Tile URL: {tile_url['tile_fetcher'].url_format}")
         
+        # Prepare metadata and sanitize floats
+        metadata = {
+            "acquisition_date": acquisition_date,
+            "water_area_km2": round(water_area_km2, 3),
+            "water_percentage": water_percentage,
+            "processing_time_seconds": processing_time,
+            "aoi_area_km2": round(area_km2, 2),
+            "parameters_used": {
+                "start_date": request.start_date or "latest available",
+                "slope_max": request.slope_max or 5,
+                "min_area_pixels": request.min_area_pixels or 100
+            }
+        }
+        
         # Return response
         return WaterDetectionResponse(
             water_polygons=water_geojson,
@@ -201,18 +232,7 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
             image_bounds=image_bounds,
             tile_url=tile_url['tile_fetcher'].url_format,
             tile_token=tile_url['token'],
-            metadata={
-                "acquisition_date": acquisition_date,
-                "water_area_km2": round(water_area_km2, 3),
-                "water_percentage": water_percentage,
-                "processing_time_seconds": processing_time,
-                "aoi_area_km2": round(area_km2, 2),
-                "parameters_used": {
-                    "start_date": request.start_date or "latest available",
-                    "slope_max": request.slope_max or 5,
-                    "min_area_pixels": request.min_area_pixels or 100
-                }
-            }
+            metadata=sanitize_floats(metadata)
         )
         
     except HTTPException:

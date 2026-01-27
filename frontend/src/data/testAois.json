@@ -1,38 +1,6 @@
 [
   {
     "id": 1,
-    "name": "Ahrweiler, Germany (2021 Floods)",
-    "description": "European flash flooding event - July 2021",
-    "coordinates": [
-      [6.85, 50.45],
-      [7.15, 50.45],
-      [7.15, 50.60],
-      [6.85, 50.60],
-      [6.85, 50.45]
-    ],
-    "center": [6.99, 50.52],
-    "zoom": 11,
-    "beforeDate": "2021-06-01",
-    "afterDate": "2021-07-25"
-  },
-  {
-    "id": 2,
-    "name": "Sindh, Pakistan (2022 Floods)",
-    "description": "Massive monsoon flooding - August 2022",
-    "coordinates": [
-      [67.5, 26.0],
-      [69.5, 26.0],
-      [69.5, 28.0],
-      [67.5, 28.0],
-      [67.5, 26.0]
-    ],
-    "center": [68.5, 27.0],
-    "zoom": 8,
-    "beforeDate": "2022-06-01",
-    "afterDate": "2022-09-15"
-  },
-  {
-    "id": 3,
     "name": "Venice Lagoon, Italy",
     "description": "Permanent water baseline - stable water body",
     "coordinates": [
@@ -42,21 +10,21 @@
       [12.25, 45.50],
       [12.25, 45.35]
     ],
-    "center": [12.38, 45.43],
+    "center": [45.43, 12.38],
     "zoom": 11
   },
   {
-    "id": 4,
-    "name": "Sahara Desert, Algeria",
-    "description": "Dry control area - minimal water expected",
+    "id": 2,
+    "name": "Lake Mead, Nevada/Arizona",
+    "description": "Largest US reservoir - drought monitoring",
     "coordinates": [
-      [2.0, 26.0],
-      [4.0, 26.0],
-      [4.0, 28.0],
-      [2.0, 28.0],
-      [2.0, 26.0]
+      [-114.85, 36.05],
+      [-114.35, 36.05],
+      [-114.35, 36.35],
+      [-114.85, 36.35],
+      [-114.85, 36.05]
     ],
-    "center": [3.0, 27.0],
-    "zoom": 8
+    "center": [36.20, -114.60],
+    "zoom": 11
   }
 ]

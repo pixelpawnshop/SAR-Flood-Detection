@@ -22,9 +22,11 @@
 }
 
 .sidebar-section h2 {
-  font-size: 1.1rem;
-  margin-bottom: 0.8rem;
-  color: #333;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+  color: #111827;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .sidebar-section h3 {
@@ -42,25 +44,23 @@
 
 .detect-button {
   width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.875rem;
+  background: #2563eb;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: background 0.2s;
 }
 
 .detect-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  background: #1d4ed8;
 }
 
 .detect-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
