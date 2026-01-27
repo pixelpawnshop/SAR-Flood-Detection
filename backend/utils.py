@@ -47,37 +47,33 @@ def calculate_aoi_area(geometry: Dict[str, Any]) -> float:
         # Get the centroid for appropriate projection
         centroid = geom.centroid
         
-        # Define projection - use UTM zone based on centroid
-        # For simplicity, use Web Mercator (EPSG:3857) which works globally
-        wgs84 = pyproj.CRS('EPSG:4326')
-        
         # Use appropriate UTM zone based on longitude
         lon = centroid.x
         lat = centroid.y
         utm_zone = int((lon + 180) / 6) + 1
         hemisphere = 'north' if lat >= 0 else 'south'
-        utm_crs = pyproj.CRS(f'+proj=utm +zone={utm_zone} +{hemisphere} +datum=WGS84')
         
-        # Create transformer
-        project = partial(
-            pyproj.transform,
-            pyproj.Proj(wgs84),
-            pyproj.Proj(utm_crs)
-        )
+        # Create CRS objects using modern pyproj API
+        wgs84 = pyproj.CRS('EPSG:4326')
+        utm_crs = pyproj.CRS(f'+proj=utm +zone={utm_zone} +{hemisphere} +ellps=WGS84 +datum=WGS84 +units=m +no_defs')
         
-        # Transform and calculate area
-        geom_utm = transform(project, geom)
+        # Create transformer (always_xy=True ensures lon, lat order)
+        transformer = pyproj.Transformer.from_crs(wgs84, utm_crs, always_xy=True)
+        
+        # Transform geometry to UTM
+        geom_utm = transform(transformer.transform, geom)
+        
+        # Calculate area in km²
         area_m2 = geom_utm.area
         area_km2 = area_m2 / 1_000_000
+        
+        logger.info(f"Calculated AOI area: {area_km2:.2f} km² (UTM zone {utm_zone}{hemisphere[0].upper()})")
         
         return area_km2
         
     except Exception as e:
-        logger.error(f"Error calculating area: {e}")
-        # Fallback: rough approximation using lat/lon degrees
-        geom = shape(geometry)
-        bounds = geom.bounds  # (minx, miny, maxx, maxy)
-        width = abs(bounds[2] - bounds[0])
+        logger.error(f"Error calculating area: {e}", exc_info=True)
+        return 0.0
         height = abs(bounds[3] - bounds[1])
         # Rough approximation: 1 degree ≈ 111 km
         area_km2 = width * height * 111 * 111

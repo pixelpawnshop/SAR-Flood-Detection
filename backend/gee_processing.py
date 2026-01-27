@@ -97,25 +97,36 @@ def get_sentinel1_image(geometry: Dict[str, Any], start_date: Optional[str] = No
             .filter(ee.Filter.eq('orbitProperties_pass', 'ASCENDING'))
         )
         
-        # Get the most recent image
-        image_list = collection.sort('system:time_start', False).limit(1)
-        
         # Check if any images found
-        size = image_list.size().getInfo()
+        size = collection.size().getInfo()
         
         if size == 0:
             date_range = f"from {start_date}" if start_date else "in the last 30 days"
             logger.warning(f"No Sentinel-1 imagery found {date_range}")
             return None, None
         
-        # Get the image
-        image = ee.Image(image_list.first())
-        
-        # Get acquisition date
-        timestamp = image.get('system:time_start').getInfo()
+        # Get the most recent acquisition date
+        most_recent = collection.sort('system:time_start', False).first()
+        timestamp = most_recent.get('system:time_start').getInfo()
+        acquisition_date_ms = timestamp
         acquisition_date = datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
         
-        logger.info(f"Found Sentinel-1 image from {acquisition_date}")
+        # Get all images from the same date to handle multi-orbit coverage
+        # Filter by date (within same day)
+        same_day_start = datetime.fromtimestamp(timestamp / 1000).replace(hour=0, minute=0, second=0)
+        same_day_end = same_day_start + timedelta(days=1)
+        
+        same_date_collection = collection.filterDate(
+            same_day_start.strftime('%Y-%m-%d'),
+            same_day_end.strftime('%Y-%m-%d')
+        )
+        
+        same_date_count = same_date_collection.size().getInfo()
+        logger.info(f"Found {same_date_count} image(s) from {acquisition_date} - mosaicking for complete coverage")
+        
+        # Mosaic all images from the same date
+        # This handles AOIs spanning multiple orbits
+        image = same_date_collection.mosaic()
         
         return image, acquisition_date
         

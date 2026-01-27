@@ -181,8 +181,14 @@ async def detect_water_endpoint(request: WaterDetectionRequest):
         # Calculate processing time
         processing_time = round(time.time() - start_time, 2)
         
-        # Calculate water percentage
-        water_percentage = round((water_area_km2 / area_km2) * 100, 2) if area_km2 > 0 else 0
+        # Calculate water percentage with validation
+        if area_km2 > 0 and water_area_km2 is not None and not math.isnan(water_area_km2):
+            water_percentage = round((water_area_km2 / area_km2) * 100, 2)
+        else:
+            water_percentage = 0
+            logger.warning(f"Could not calculate water percentage: area_km2={area_km2}, water_area_km2={water_area_km2}")
+        
+        logger.info(f"Water detection stats: AOI={area_km2:.2f} km², Water={water_area_km2:.2f} km², Coverage={water_percentage}%")
         
         # Generate preview URL and bounds
         import ee
