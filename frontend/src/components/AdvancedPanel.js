@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './AdvancedPanel.css';
 
 function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
+  const [showTooltip, setShowTooltip] = useState(null);
+
   const handleParamChange = (key, value) => {
     setParams({
       ...params,
@@ -58,7 +60,22 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
 
           <div className="param-group">
             <label>
-              <span className="param-label">Max Slope (degrees)</span>
+              <span className="param-label">
+                Max Slope (degrees)
+                <button 
+                  className="info-btn"
+                  onMouseEnter={() => setShowTooltip('slope')}
+                  onMouseLeave={() => setShowTooltip(null)}
+                  onClick={(e) => e.preventDefault()}
+                >
+                  ℹ
+                </button>
+                {showTooltip === 'slope' && (
+                  <span className="tooltip">
+                    Maximum terrain slope for water detection. Lower values (0-2°) for coastal areas, higher (5-10°) for rivers and mountain floods.
+                  </span>
+                )}
+              </span>
               <span className="param-value">
                 {params.slope_max ?? 5}°
               </span>
@@ -81,7 +98,22 @@ function AdvancedPanel({ showAdvanced, setShowAdvanced, params, setParams }) {
 
           <div className="param-group">
             <label>
-              <span className="param-label">Min Area (pixels)</span>
+              <span className="param-label">
+                Min Area (pixels)
+                <button 
+                  className="info-btn"
+                  onMouseEnter={() => setShowTooltip('area')}
+                  onMouseLeave={() => setShowTooltip(null)}
+                  onClick={(e) => e.preventDefault()}
+                >
+                  ℹ
+                </button>
+                {showTooltip === 'area' && (
+                  <span className="tooltip">
+                    Minimum size of water bodies to detect. Filters out small noise artifacts. Higher values remove smaller water features.
+                  </span>
+                )}
+              </span>
               <span className="param-value">
                 {params.min_area_pixels ?? 100}
               </span>

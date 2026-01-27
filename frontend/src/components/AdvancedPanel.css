@@ -55,6 +55,62 @@
 .param-label {
   color: #333;
   font-weight: 500;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: help;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.info-btn:hover {
+  background: #5568d3;
+  transform: scale(1.1);
+}
+
+.tooltip {
+  position: absolute;
+  left: 0;
+  top: 25px;
+  background: #2d3748;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.4;
+  max-width: 250px;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  white-space: normal;
+}
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 10px;
+  width: 8px;
+  height: 8px;
+  background: #2d3748;
+  transform: rotate(45deg);
 }
 
 .param-value {
