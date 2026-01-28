@@ -39,6 +39,12 @@ This application enables users to:
 └─────────────────────────┘
 ```
 
+https://github.com/user-attachments/assets/cca1d721-fc97-466c-9b33-dc58b6b7a88a
+
+## 🚀 Demo
+
+[Live Demo](https://pixelpawnshop.github.io/SAR-Flood-Detection/)
+
 ## 🚀 Features
 
 - **Adaptive Water Detection**: Otsu thresholding automatically adjusts to scene characteristics
