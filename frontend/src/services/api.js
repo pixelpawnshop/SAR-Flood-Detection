@@ -19,16 +19,30 @@ const api = axios.create({
  */
 export const detectWater = async (geometry, params = {}, onProgress = null) => {
   try {
-    // Simulate progress updates (backend is synchronous)
+    // Check if backend is awake (cold start detection)
+    const startTime = Date.now();
+    let coldStartDetected = false;
     let progressInterval;
+    
+    // Set a timer to detect potential cold start
+    const coldStartTimer = setTimeout(() => {
+      if (onProgress && !coldStartDetected) {
+        coldStartDetected = true;
+        onProgress('coldstart');
+      }
+    }, 5000); // If request takes >5s, likely cold start
+    
+    // Simulate progress updates (backend is synchronous)
     if (onProgress) {
       let stage = 0;
       const stages = ['imagery', 'filters', 'vectorizing'];
       onProgress(stages[0]);
       
       progressInterval = setInterval(() => {
-        stage = (stage + 1) % stages.length;
-        onProgress(stages[stage]);
+        if (!coldStartDetected) {
+          stage = (stage + 1) % stages.length;
+          onProgress(stages[stage]);
+        }
       }, 15000); // Update every 15 seconds
     }
 
@@ -36,6 +50,8 @@ export const detectWater = async (geometry, params = {}, onProgress = null) => {
       geometry,
       ...params,
     });
+    
+    clearTimeout(coldStartTimer);
 
     // Clear progress interval
     if (progressInterval) {

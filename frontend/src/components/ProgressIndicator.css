@@ -44,6 +44,12 @@
   color: #333;
 }
 
+.progress-subtext {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
 .progress-percent {
   font-size: 0.9rem;
   color: #667eea;
