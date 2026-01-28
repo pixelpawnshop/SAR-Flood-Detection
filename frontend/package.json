@@ -2,7 +2,7 @@
   "name": "sar-flood-frontend",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://yourusername.github.io/sar-flood",
+  "homepage": "https://pixelpawnshop.github.io/SAR-Flood-Detection",
   "dependencies": {
     "@turf/turf": "^6.5.0",
     "axios": "^1.6.0",
